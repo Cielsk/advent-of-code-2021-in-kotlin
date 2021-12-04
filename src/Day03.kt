@@ -1,8 +1,8 @@
-private class TrieNode(var cnt: Int = 0) {
-    val children = Array<TrieNode?>(2) { null }
-}
-
 fun main() {
+    class TrieNode(var cnt: Int = 0) {
+        val children = Array<TrieNode?>(2) { null }
+    }
+
     fun part1(input: List<String>): Int {
         if (input.isEmpty()) return 0
         var gamma = 0
