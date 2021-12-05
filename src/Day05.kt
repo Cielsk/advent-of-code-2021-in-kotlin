@@ -13,11 +13,7 @@ fun main() {
                 start.y == end.y -> (start.x..end.x).map { Point(it, start.y) }
                 else -> {
                     val dx = end.x - start.x
-                    val dir = when {
-                        end.y > start.y -> 1
-                        end.y < start.y -> -1
-                        else -> 0
-                    }
+                    val dir = if (end.y > start.y) 1 else -1
                     (0..dx).map { delta ->
                         Point(start.x + delta, start.y + dir * delta)
                     }
