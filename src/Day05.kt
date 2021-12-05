@@ -1,80 +1,60 @@
 fun main() {
 
-    fun part1(input: List<String>): Int {
-        val data = Array(1001) { IntArray(1001) }
-        for (line in input) {
-            val tmp = line.trim().split(' ')
-            val point1 = tmp[0].split(',').map { it.toInt() }
-            val point2 = tmp[2].split(',').map { it.toInt() }
-            if (point1[0] == point2[0]) { // vertical segment
-                val x = point1[0]
-                val start = minOf(point1[1], point2[1])
-                val end = maxOf(point1[1], point2[1])
-                for (r in start..end) {
-                    data[r][x]++
-                }
-            } else if (point1[1] == point2[1]) { // horizontal segment
-                val y = point1[1]
-                val start = minOf(point1[0], point2[0])
-                val end = maxOf(point1[0], point2[0])
-                for (c in start..end) {
-                    data[y][c]++
+    data class Point(val x: Int, val y: Int)
+    data class Segment(val start: Point, val end: Point) {
+        private val canonical: Segment
+            get() =
+                if (start.x < end.x || (start.x == end.x && start.y < end.y)) this
+                else Segment(end, start)
+
+        fun getPoints(): List<Point> = with(canonical) {
+            when {
+                start.x == end.x -> (start.y..end.y).map { Point(start.x, it) }
+                start.y == end.y -> (start.x..end.x).map { Point(it, start.y) }
+                else -> {
+                    val dx = end.x - start.x
+                    val dir = when {
+                        end.y > start.y -> 1
+                        end.y < start.y -> -1
+                        else -> 0
+                    }
+                    (0..dx).map { delta ->
+                        Point(start.x + delta, start.y + dir * delta)
+                    }
                 }
             }
         }
-        return data.sumOf { row -> row.count { it >= 2 } }
     }
+
+    fun parseInput(input: List<String>) = input.map {
+        val (start, end) = it.split(" -> ")
+        val (x1, y1) = start.split(",")
+        val (x2, y2) = end.split(",")
+        Segment(Point(x1.toInt(), y1.toInt()), Point(x2.toInt(), y2.toInt()))
+    }
+
+    fun countPoints(segments: List<Segment>): Int {
+        val map = HashMap<Point, Int>()
+        for (segment in segments) {
+            for (point in segment.getPoints()) {
+                map[point] = (map[point] ?: 0) + 1
+            }
+        }
+        return map.count { it.value >= 2 }
+    }
+
+    fun part1(input: List<String>): Int {
+        val segments = parseInput(input).filter { it.start.x == it.end.x || it.start.y == it.end.y }
+        return countPoints(segments)
+    }
+
 
     fun part2(input: List<String>): Int {
-        val data = Array(1001) { IntArray(1001) }
-        for (line in input) {
-            val tmp = line.trim().split(' ')
-            val point1 = tmp[0].split(',').map { it.toInt() }
-            val point2 = tmp[2].split(',').map { it.toInt() }
-            if (point1[0] == point2[0]) { // vertical segment
-                val x = point1[0]
-                val start = minOf(point1[1], point2[1])
-                val end = maxOf(point1[1], point2[1])
-                for (r in start..end) {
-                    data[r][x]++
-                }
-            } else if (point1[1] == point2[1]) { // horizontal segment
-                val y = point1[1]
-                val start = minOf(point1[0], point2[0])
-                val end = maxOf(point1[0], point2[0])
-                for (c in start..end) {
-                    data[y][c]++
-                }
-            } else {
-                val x1: Int
-                val y1: Int
-                val x2: Int
-                val y2: Int
-                if (point1[0] <= point2[0]) {
-                    x1 = point1[0]
-                    y1 = point1[1]
-                    x2 = point2[0]
-                    y2 = point2[1]
-                } else {
-                    x1 = point2[0]
-                    y1 = point2[1]
-                    x2 = point1[0]
-                    y2 = point1[1]
-                }
-                val deltaX = x2 - x1
-                val deltaY = y2 - y1
-                for (x in x1..x2) {
-                    if ((x - x1) * deltaX % deltaY != 0) continue
-                    val y = (x - x1) * deltaX / deltaY + y1
-                    data[y][x]++
-                }
-            }
-        }
-        return data.sumOf { row -> row.count { it >= 2 } }
+        return countPoints(parseInput(input))
     }
 
 
-    // test if implementation meets criteria from the description, like:
+    // test if implementation meets criteria start the description, like:
     val testInput = readInput("Day05_test")
     check(part1(testInput) == 5)
     check(part2(testInput) == 12)
