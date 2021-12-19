@@ -66,38 +66,44 @@ fun main() {
 
     fun solve(input: List<String>): Pair<Int, Int> {
         val scanners = parseInput(input)
-        val scannerSet = mutableSetOf(scanners.first())
-        val beaconSet = mutableSetOf<Point3D>().apply { addAll(scanners.first().beacons) }
-        val scannerPositions = mutableSetOf(Point3D(0, 0, 0))
-
-        while (scannerSet.size != scanners.size) {
-            for (scanner in scanners) {
-                if (scanner in scannerSet) continue
-
-                scOrt@for (scOrt in scanner.orientations) {
-                    for (absoluteBeacon in beaconSet) {
-                        for (testBeacon in scOrt.beacons) {
-                            val delta = absoluteBeacon - testBeacon
-                            val candidateBeacons = scOrt.beacons.map { it + delta }.toSet()
-                            if (beaconSet.intersect(candidateBeacons).size >= 12) {
-                                scannerSet += scanner
-                                scannerPositions += delta
-                                beaconSet.addAll(candidateBeacons)
-                                break@scOrt
+        val queue = ArrayDeque<Int>()
+        val visited = BooleanArray(scanners.size)
+        val standardBeaconSets = Array(scanners.size) { setOf<Point3D>() }
+        val positions = Array(scanners.size) { Point3D(0, 0, 0) }
+        standardBeaconSets[0] = scanners[0].beacons.toSet()
+        queue.addLast(0)
+        visited[0] = true
+        while (queue.isNotEmpty()) {
+            val idx = queue.removeFirst()
+            val standardBeacons = standardBeaconSets[idx]
+            for (i in scanners.indices) {
+                if (visited[i]) continue
+                ort@ for (scOrt in scanners[i].orientations) {
+                    for (standard in standardBeacons) {
+                        for (target in scOrt.beacons) {
+                            val delta = standard - target
+                            val candidates = scOrt.beacons.map { it + delta }
+                            if (candidates.count { it in standardBeacons } >= 12) {
+                                queue.addLast(i)
+                                positions[i] = delta
+                                standardBeaconSets[i] = candidates.toSet()
+                                visited[i] = true
+                                break@ort
                             }
                         }
                     }
                 }
             }
         }
-        val tmp = scannerPositions.toList()
+
         var maxDist = Int.MIN_VALUE
-        for (i in 0 until tmp.lastIndex) {
-            for (j in i + 1 until tmp.size) {
-                maxDist = maxOf(maxDist, tmp[i] dist tmp[j])
+        for (i in 0 until positions.lastIndex) {
+            for (j in i + 1 until positions.size) {
+                maxDist = maxOf(maxDist, positions[i] dist positions[j])
             }
         }
-        return Pair(beaconSet.size, maxDist)
+        val allBeacons = standardBeaconSets.flatMap { it }.toSet()
+        return Pair(allBeacons.size, maxDist)
     }
 
 
